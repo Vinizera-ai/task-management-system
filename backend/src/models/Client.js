@@ -92,7 +92,6 @@ const clientSchema = new mongoose.Schema({
 // Indexes para otimizar consultas
 clientSchema.index({ companyName: 1 });
 clientSchema.index({ status: 1 });
-clientSchema.index({ clientId: 1 });
 clientSchema.index({ responsibleEmail: 1 });
 
 // Virtual para URL de acesso do cliente

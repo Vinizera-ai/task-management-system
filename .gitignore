@@ -16,3 +16,4 @@ build/
 # Arquivos de sistema operacional
 .DS_Store
 Thumbs.db*.msi 
+*.exe 

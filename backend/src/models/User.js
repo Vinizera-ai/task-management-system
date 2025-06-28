@@ -68,9 +68,8 @@ userSchema.index({ role: 1 });
 // Middleware para hash da senha antes de salvar
 userSchema.pre('save', async function(next) {
   // Só faz hash se a senha foi modificada
-  if (!this.isModified('password')) {
-    next();
-  }
+  if (!this.isModified('password')) return next();
+
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

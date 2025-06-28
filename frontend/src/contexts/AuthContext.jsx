@@ -78,8 +78,8 @@ function authReducer(state, action) {
   }
 }
 
-// Contexto
-const AuthContext = createContext()
+// Contexto - EXPORTADO
+export const AuthContext = createContext()
 
 // Provider
 export function AuthProvider({ children }) {

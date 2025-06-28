@@ -1,3 +1,4 @@
+// frontend/src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { authService } from '@/services/authService'
 import toast from 'react-hot-toast'
@@ -118,7 +119,7 @@ export function AuthProvider({ children }) {
       dispatch({
         type: actionTypes.AUTH_SUCCESS,
         payload: {
-          user: response.data.user,
+          user: response.user, // response já é o data do axios
           token: token
         }
       })
@@ -133,20 +134,33 @@ export function AuthProvider({ children }) {
     dispatch({ type: actionTypes.AUTH_START })
 
     try {
+      console.log('🔄 Tentando fazer login com:', credentials.email)
+      
       const response = await authService.login(credentials)
+      
+      console.log('✅ Resposta do login:', response)
       
       dispatch({
         type: actionTypes.AUTH_SUCCESS,
         payload: {
-          user: response.data.user,
-          token: response.data.token
+          user: response.user,
+          token: response.token
         }
       })
 
-      toast.success(`Bem-vindo, ${response.data.user.name}!`)
+      toast.success(`Bem-vindo, ${response.user.name}!`)
       return { success: true }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Erro ao fazer login'
+      console.error('❌ Erro no login:', error)
+      
+      // Extrair mensagem de erro
+      let errorMessage = 'Erro ao fazer login'
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.message) {
+        errorMessage = error.message
+      }
       
       dispatch({
         type: actionTypes.AUTH_FAILURE,
@@ -205,11 +219,11 @@ export function AuthProvider({ children }) {
         type: actionTypes.AUTH_SUCCESS,
         payload: {
           user: state.user,
-          token: response.data.token
+          token: response.token
         }
       })
 
-      return response.data.token
+      return response.token
     } catch (error) {
       console.error('Erro ao renovar token:', error)
       logout()

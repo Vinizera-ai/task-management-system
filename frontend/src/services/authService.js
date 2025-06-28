@@ -1,15 +1,24 @@
+// frontend/src/services/authService.js
 import { get, post, setAuthToken, removeAuthToken } from './apiClient'
 
 export const authService = {
   // Login do usuário
   async login(credentials) {
-    const response = await post('/auth/login', credentials)
-    
-    if (response.success && response.token) {
-      setAuthToken(response.token)
+    try {
+      // A função post já retorna response.data automaticamente
+      const data = await post('/auth/login', credentials)
+      
+      // Verificar se o login foi bem-sucedido
+      if (data.success && data.token) {
+        setAuthToken(data.token)
+        return data // Retornar os dados já parseados
+      } else {
+        throw new Error(data.error || 'Erro no login')
+      }
+    } catch (error) {
+      // Re-lançar o erro para ser tratado pelo AuthContext
+      throw error
     }
-    
-    return response
   },
 
   // Logout do usuário
@@ -31,13 +40,18 @@ export const authService = {
 
   // Renovar token
   async refreshToken() {
-    const response = await post('/auth/refresh')
-    
-    if (response.success && response.token) {
-      setAuthToken(response.token)
+    try {
+      const data = await post('/auth/refresh')
+      
+      if (data.success && data.token) {
+        setAuthToken(data.token)
+        return data
+      } else {
+        throw new Error('Erro ao renovar token')
+      }
+    } catch (error) {
+      throw error
     }
-    
-    return response
   },
 
   // Alterar senha

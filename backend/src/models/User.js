@@ -64,21 +64,41 @@ const userSchema = new mongoose.Schema({
 // Index para otimizar consultas
 userSchema.index({ status: 1 });
 userSchema.index({ role: 1 });
+userSchema.index({ email: 1 });
 
 // Middleware para hash da senha antes de salvar
 userSchema.pre('save', async function(next) {
-  // Só faz hash se a senha foi modificada
-  if (!this.isModified('password')) return next();
+  try {
+    // Só faz hash se a senha foi modificada
+    if (!this.isModified('password')) {
+      return next();
+    }
 
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+    console.log('🔐 Fazendo hash da senha para:', this.email);
+    
+    // Gerar salt e hash
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    
+    console.log('✅ Hash da senha criado com sucesso');
+    next();
+  } catch (error) {
+    console.error('❌ Erro no hash da senha:', error);
+    next(error);
+  }
 });
 
 // Método para comparar senha
 userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  try {
+    console.log('🔍 Comparando senha para:', this.email);
+    const result = await bcrypt.compare(enteredPassword, this.password);
+    console.log('🔐 Resultado da comparação:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Erro na comparação de senha:', error);
+    return false;
+  }
 };
 
 // Virtual para nome curto (primeiro nome)

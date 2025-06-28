@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - Task Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .credentials { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Debug de Login - Task Management System</h1>
+    
+    <div class="credentials">
+        <h3>📋 Credenciais de Teste:</h3>
+        <p><strong>Email:</strong> admin@sistema.com</p>
+        <p><strong>Senha:</strong> admin123</p>
+        <p><strong>Backend:</strong> http://localhost:5000</p>
+        <p><strong>Frontend:</strong> http://localhost:3000</p>
+    </div>
+
+    <div class="test-section">
+        <h2>1. 🔍 Verificar Conectividade</h2>
+        <button onclick="testConnectivity()">Testar Conectividade</button>
+        <div id="connectivity-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 🌐 Teste Direto (Fetch)</h2>
+        <button onclick="testDirectFetch()">Teste com Fetch Direto</button>
+        <div id="fetch-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. ⚙️ Verificar Configurações</h2>
+        <button onclick="checkConfigurations()">Verificar Configurações</button>
+        <div id="config-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 💾 Teste LocalStorage</h2>
+        <button onclick="testLocalStorage()">Testar LocalStorage</button>
+        <button onclick="clearLocalStorage()">Limpar LocalStorage</button>
+        <div id="storage-result"></div>
+    </div>
+
+    <script>
+        let testResults = {};
+
+        // 1. Testar conectividade básica
+        async function testConnectivity() {
+            const resultDiv = document.getElementById('connectivity-result');
+            resultDiv.innerHTML = '<p>⏳ Testando conectividade...</p>';
+
+            try {
+                // Testar health check
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+                
+                testResults.connectivity = { success: true, data };
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Backend Acessível</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Version:</strong> ${data.version}</p>
+                    </div>
+                `;
+            } catch (error) {
+                testResults.connectivity = { success: false, error: error.message };
+                
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Backend Inacessível</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p>🔧 <strong>Solução:</strong> Verifique se o backend está rodando na porta 5000</p>
+                        <p>Execute: <code>cd backend && npm run dev</code></p>
+                    </div>
+                `;
+            }
+        }
+
+        // 2. Teste direto com fetch
+        async function testDirectFetch() {
+            const resultDiv = document.getElementById('fetch-result');
+            resultDiv.innerHTML = '<p>⏳ Testando login direto...</p>';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@sistema.com',
+                        password: 'admin123'
+                    })
+                });
+
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                testResults.directFetch = { 
+                    success: response.ok && data.success, 
+                    status: response.status,
+                    data 
+                };
+
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Login Direto Funcionou!</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Token:</strong> ${data.token.substring(0, 20)}...</p>
+                            <p><strong>Usuário:</strong> ${data.user.name} (${data.user.role})</p>
+                            <details>
+                                <summary>Ver resposta completa</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+
+                    // Salvar dados para testes subsequentes
+                    localStorage.setItem('debug_token', data.token);
+                    localStorage.setItem('debug_user', JSON.stringify(data.user));
+                    
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Login Falhou</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Success:</strong> ${data.success}</p>
+                            <p><strong>Erro:</strong> ${data.error || 'Desconhecido'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                testResults.directFetch = { success: false, error: error.message };
+                
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro de Rede</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p>🔧 Verifique se o backend está rodando e se não há bloqueios de CORS</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 3. Verificar configurações
+        function checkConfigurations() {
+            const resultDiv = document.getElementById('config-result');
+            
+            const configs = {
+                userAgent: navigator.userAgent,
+                currentURL: window.location.href,
+                localStorage: typeof(Storage) !== "undefined",
+                cookies: navigator.cookieEnabled,
+                online: navigator.onLine
+            };
+
+            testResults.configurations = configs;
+
+            resultDiv.innerHTML = `
+                <div class="warning">
+                    <h4>⚙️ Configurações do Navegador</h4>
+                    <p><strong>URL Atual:</strong> ${configs.currentURL}</p>
+                    <p><strong>LocalStorage:</strong> ${configs.localStorage ? '✅ Disponível' : '❌ Indisponível'}</p>
+                    <p><strong>Cookies:</strong> ${configs.cookies ? '✅ Habilitados' : '❌ Desabilitados'}</p>
+                    <p><strong>Online:</strong> ${configs.online ? '✅ Conectado' : '❌ Offline'}</p>
+                    <p><strong>User Agent:</strong> ${configs.userAgent}</p>
+                </div>
+            `;
+        }
+
+        // 4. Testar LocalStorage
+        function testLocalStorage() {
+            const resultDiv = document.getElementById('storage-result');
+            
+            try {
+                // Testar armazenamento
+                const testKey = 'debug_test';
+                const testValue = 'test_value_' + Date.now();
+                
+                localStorage.setItem(testKey, testValue);
+                const retrieved = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+
+                const existingData = {
+                    token: localStorage.getItem('token'),
+                    debug_token: localStorage.getItem('debug_token'),
+                    debug_user: localStorage.getItem('debug_user')
+                };
+
+                const working = retrieved === testValue;
+                testResults.localStorage = { working, existingData };
+
+                resultDiv.innerHTML = `
+                    <div class="${working ? 'success' : 'error'}">
+                        <h4>${working ? '✅' : '❌'} LocalStorage ${working ? 'Funcionando' : 'Com Problemas'}</h4>
+                        <p><strong>Token atual:</strong> ${existingData.token ? 'Presente' : 'Ausente'}</p>
+                        <p><strong>Debug token:</strong> ${existingData.debug_token ? 'Presente' : 'Ausente'}</p>
+                        <p><strong>Debug user:</strong> ${existingData.debug_user ? 'Presente' : 'Ausente'}</p>
+                        
+                        <details>
+                            <summary>Ver dados armazenados</summary>
+                            <pre>${JSON.stringify(existingData, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+
+            } catch (error) {
+                testResults.localStorage = { working: false, error: error.message };
+                
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro no LocalStorage</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearLocalStorage() {
+            const keys = ['token', 'user', 'debug_token', 'debug_user'];
+            keys.forEach(key => localStorage.removeItem(key));
+            
+            document.getElementById('storage-result').innerHTML = `
+                <div class="success">
+                    <h4>🧹 LocalStorage Limpo</h4>
+                    <p>Dados de autenticação removidos</p>
+                </div>
+            `;
+        }
+
+        // Executar teste de conectividade automaticamente
+        window.onload = function() {
+            setTimeout(() => {
+                testConnectivity();
+            }, 500);
+        };
+
+        // Disponibilizar resultados no console
+        window.getTestResults = () => testResults;
+        
+        console.log('🧪 Página de debug carregada');
+        console.log('💡 Execute getTestResults() para ver todos os resultados');
+    </script>
+</body>
+</html>
